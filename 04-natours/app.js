@@ -1,40 +1,41 @@
-const fs = require('fs');
 const express = require('express');
+const morgan = require('morgan');
+
+const userRouter = require('./routes/userRoutes');
+const tourRouter = require('./routes/tourRoutes');
 
 const app = express();
 
+
+//use middlewear to access body of post
+//morgan is for logging
+app.use(morgan('dev'));
 app.use(express.json());
-// app.get('/', (req, res) => {
-//   res
-//     .status(200)
-//     .json({ message: 'Hello from the server side!', app: 'natours' });
-// });
 
-// app.post('/', (req, res) => {
-//   console.log(req);
-//   res.send('You can post to this endpoint');
-// });
+app.use((req, res, next) => {
+  console.log("Hello from the middlewear!");
+  next();
+})
 
-const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
-);
+/**
+ * Call next on custome middlewear to have 
+ * request to continue on the middlewear stack
+ */
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+})
 
-app.get('/api/v1/tours', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: {
-      tours: tours,
-    },
-  });
-});
+//route handlers
 
-app.post('/api/v1/tours', (req, res) => {
-  console.log(req.body);
-  res.send('Done');
-});
+// app.get('/api/v1/tours', getAllTours);
+// app.get('/api/v1/tours/:id', getTour);
+// app.post('/api/v1/tours', createTour);
+// app.patch('/api/v1/tours/:id', updateTour);
+// app.delete('/api/v1/tours/:id', deleteTour);
 
-const port = 3000;
-app.listen(port, () => {
-  console.log(`App running on port ${port}.`);
-});
+//Mounting new router on route
+app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/users', userRouter);
+
+module.exports = app;
